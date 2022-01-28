@@ -1,0 +1,34 @@
+= Read Me
+
+    This readme is intented to show a new user how to setup a development environment to run and build the code. These instructions assume the user is using a Linux environment. Note, Python3 needs to be installed beforehand. Additionally some knowledge about the commandline will be beneficial. Termial commands will be denoted using '>'.
+
+== Setup Virtual Envrionment
+. Set your termianl to the root project directory
+. Create virtualenv
+.. > python3 -m venv virtualenv
+. Activate the virtual environment
+.. > source virtualenv/bin/activate
+. Install project dependencies
+.. > pip install -r requirements.txt
+
+== Setup Configurations
+    Before you can run the project you will want to configure it to use your wallets. You will need your wallet address and the name of the crypto coin mined on nanopool.
+
+. Open the wallet_addresses.txt file (it should be in the root project directory. Create it if it does not exist.)
+. Type your coin's name followed by a space. Then type your wallet address.
+.. It should look something like this:
+... Bitcoin RBWQX1f9aVEya3VPfmGnkkzwpWx1111111
+. Save and close the wallet_addresses.txt file
+
+== Run Project
+. Activate your virtual environment (if it's not already active)
+. In the root project directory run the following:
+.. > python3 launcher.py
+
+== Create Portable Project Folder
+    Creates a folder you can share with others to run this project. All they need to do is run the nanopool file inside the nanopool folder. They should also modify the wallet_addresses.txt file located in that folder with their information.
+
+. Activate your virtual environment (if it's not already active)
+. Run pyinstaller
+.. > pyinstaller nanopool.spec
+. If the command runs successfully, a folder named nanopool will be in the dist directory
