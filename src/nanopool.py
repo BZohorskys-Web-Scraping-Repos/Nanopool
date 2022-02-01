@@ -8,8 +8,11 @@ import logging
 import webbrowser
 
 import aiohttp
+from lxml import html
 
-SITE = 'nanopool.org'
+NANOPOOL_SITE = 'nanopool.org'
+RAVEN_EXPLORER_API_CALL = 'https://explorer.ravencoin.org/api/addr/'
+COIN_MARKET_CAP_SITE = 'https://coinmarketcap.com/currencies/'
 
 logging.basicConfig(
     level=logging.WARN,
@@ -19,27 +22,20 @@ logging.basicConfig(
 # logging.WARN(locals())
 
 async def search():
-    urls = getUrls()
-    urlTasks = []
-    for link in urls:
-        urlTasks.append(asyncio.create_task(get_account_details(link['api'], link['url'])))
-    await idleAnimation(asyncio.gather(*urlTasks))
-    dataList = []
-    for task in urlTasks:
-        if task.result()['code'] == 200:
-            json_result = json.loads(task.result()['json'])
-            data = {
-                'avg_hash': json_result['data']['avgHashRate']['h6'],
-                'balance': json_result['data']['userParams']['balance'],
-                'current_hash': json_result['data']['userParams']['hashrate'],
-                'url': task.result()['url']
-            }
-            dataList.append(data)
+    wallets= parseWalletAddressFile()
+    walletDetailsTaskList = []
+    for wallet in wallets:
+        walletDetailsTaskList.append(asyncio.create_task(get_wallet_details(wallet)))
+    await idleAnimation(asyncio.gather(*walletDetailsTaskList))
+    walletDetailsList= []
+    for walletDetails in walletDetailsTaskList:
+        if not walletDetails.result()['error']:
+            walletDetailsList.append(walletDetails.result())
         else:
-            print(f"Error: received a {task.response()['code']} for {task.response()['url']}.")
-    curses.wrapper(interactive_console, dataList)
+            print(f"Error: received an error {walletDetails.response()['address']}.")
+    curses.wrapper(interactive_console, walletDetailsList)
 
-def getUrls():
+def parseWalletAddressFile():
     coin_map = {
         'ethereum': 'eth',
         'ethereum classic': 'etc',
@@ -59,19 +55,52 @@ def getUrls():
             if len(wallet_address.split()) > 1:
                 coin_subdivision, wallet_address = wallet_address.split(maxsplit=1)
                 coin = ''.join([coin, ' ', coin_subdivision])
-            links = {
-                'api': ''.join(['https://', coin_map[coin.lower()], '.', SITE, '/api/v1/load_account/', wallet_address]),
-                'url': ''.join(['https://', coin_map[coin.lower()], '.', SITE, '/account/', wallet_address])
+            data = {
+                'nanoapi': ''.join(['https://', coin_map[coin.lower()], '.', NANOPOOL_SITE, '/api/v1/load_account/', wallet_address]),
+                'nanourl': ''.join(['https://', coin_map[coin.lower()], '.', NANOPOOL_SITE, '/account/', wallet_address]),
+                'address': wallet_address
             }
-            wallets.append(links)
+            if coin.lower() == 'ravencoin':
+                data['explorerapi'] = RAVEN_EXPLORER_API_CALL + data['address']
+            data['coinmarketcapurl'] = COIN_MARKET_CAP_SITE + coin.lower()
+            wallets.append(data)
     return wallets
 
-async def get_account_details(apiurl, url):
+async def get_wallet_details(data):
+    wallet_details = {
+        'error': False
+    }
     async with aiohttp.ClientSession() as session:
-        async with session.get(apiurl) as response:
-            code = response.status
-            json = await response.text()
-            return {'code':code,'json':json, 'url':url}
+        async with session.get(data['nanoapi']) as response:
+            if response.status != 200:
+                wallet_details['error'] = True
+            else:
+                nano_api_json = await response.text()
+                json_result = json.loads(nano_api_json)
+                wallet_details['avg_hash'] = json_result['data']['avgHashRate']['h6']
+                wallet_details['mining_balance'] = json_result['data']['userParams']['balance']
+                wallet_details['current_hash'] = json_result['data']['userParams']['hashrate']
+                wallet_details['nanourl'] = data['nanourl']
+
+        if 'explorerapi' in data:
+            async with session.get(data['explorerapi']) as response:
+                if response.status != 200:
+                    wallet_details['error'] = True
+                else:
+                    explorer_api_json = await response.text()
+                    json_result = json.loads(explorer_api_json)
+                    wallet_details['wallet_balance'] = json_result['balance']
+
+        async with session.get(data['coinmarketcapurl']) as response:
+            if response.status != 200:
+                wallet_details['error'] = True
+            else:
+                html_str = await response.text()
+                html_tree = html.fromstring(html_str)
+                wallet_details['coin_value'] = html_tree.xpath('//div[@class="priceValue "]/span/text()')[0]
+
+    return wallet_details
+
 
 async def idleAnimation(task):
     for frame in itertools.cycle(r'-\|/-\|/'):
@@ -86,7 +115,11 @@ def interactive_console(screen, data):
     while pos < len(data):
         screen.clear()
         screen.addstr("({0}/{1}) Wallets\n".format(pos+1, len(data)))
-        screen.addstr("Balance: {0}\n".format(data[pos]['balance']))
+        screen.addstr("Coin Value: {0}\n".format(data[pos]['coin_value']))
+        if 'wallet_balance' in data[pos]:
+            screen.addstr("Wallet Balance: {0}\n".format(data[pos]['wallet_balance']))
+            screen.addstr("Wallet Value: ${0}\n".format(float(data[pos]['wallet_balance']) * float(data[pos]['coin_value'][1:])))
+        screen.addstr("Mining Balance: {0}\n".format(data[pos]['mining_balance']))
         screen.addstr("Curent Hashrate: {0}\n".format(data[pos]['current_hash']))
         screen.addstr("Avg Hashrate: {0}\n".format(data[pos]['avg_hash']))
         screen.addstr("Next, Previous, Open, or Quit? (j,k,o,q)")
@@ -104,7 +137,7 @@ def interactive_console(screen, data):
                 else:
                     user_respone = screen.getkey()
             elif user_respone == 'o':
-                webbrowser.open(data[pos]['url'])
+                webbrowser.open(data[pos]['nanourl'])
             elif user_respone == 'q':
                 valid_response = True
                 pos = len(data)
