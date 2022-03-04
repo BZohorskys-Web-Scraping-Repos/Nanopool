@@ -1,34 +1,117 @@
-= Read Me
+= README
 
-    This readme is intented to show a new user how to setup a development environment to run and build the code. These instructions assume the user is using a Linux environment. Note, Python3 needs to be installed beforehand. Additionally some knowledge about the commandline will be beneficial. Termial commands will be denoted using '>'.
+This cli app allows a user to quickly check their nanopool wallets.
 
-== Setup Virtual Envrionment
-. Set your termianl to the root project directory
-. Create virtualenv
-.. > python3 -m venv virtualenv
+== Getting Started
+
+=== Retrieve the Code
+
+You can either clone the codebase or download it directly, I suggest downloading a release.
+
+==== Cloning
+
+. Download and install Git link:https://git-scm.com/downloads[here] if Git is not installed
+. Choose a method of cloning using github's documentation link:https://docs.github.com/en/get-started/getting-started-with-git/about-remote-repositories#cloning-with-https-urls[here]
+
+.Code Snippet
+[source]
+----
+git clone git@github.com:BZohorskys-Web-Scraping-Repos/Nanopool.git
+----
+
+==== Downloading
+
+When downloading you can either download a zip folder of a specific branch of the codebase or download a release provided on github. A link to download the master branch of the codebase can be found link:https://github.com/BZohorskys-Web-Scraping-Repos/Nanopool/archive/refs/heads/master.zip[here]. However, I'd suggest downloading a release as those will be more stable. 
+
+=== Setup a Virtual Environment
+
+. Download and install Python link:https://www.python.org/downloads/[here] if Python is not installed
+. Move to the project's top directory
+. Create a virtual environment
 . Activate the virtual environment
-.. > source virtualenv/bin/activate
 . Install project dependencies
-.. > pip install -r requirements.txt
 
-== Setup Configurations
-    Before you can run the project you will want to configure it to use your wallets. You will need your wallet address and the name of the crypto coin mined on nanopool.
+.Code Snippet
+[source]
+----
+cd <to the project's top level directory>
+python3 -m venv virtualenv
+source virtualenv/bin/activate
+pip install -r requirements.txt
+----
 
-. Open the wallet_addresses.txt file (it should be in the root project directory. Create it if it does not exist.)
-. Type your coin's name followed by a space. Then type your wallet address.
-.. It should look something like this:
-... Bitcoin RBWQX1f9aVEya3VPfmGnkkzwpWx1111111
-. Save and close the wallet_addresses.txt file
+=== Setup Configuration File
+
+Before you can run the project you will want to configure it to use your wallets. You will need your wallet address and the name of the crypto coin mined on nanopool.
+
+. Open the wallet_addresses.txt file (it should be in the top level project directory. Create it if it does not exist.)
+. On one line type your coin's name and then your wallet address, separated by a space.
+
+    Example:
+    Bitcoin RBWQX1f9aVEya3VPfmGnkkzwpWx1111111
+
+. Save and close wallet_addresses.txt
 
 == Run Project
-. Activate your virtual environment (if it's not already active)
-. In the root project directory run the following:
-.. > python3 launcher.py
 
-== Create Portable Project Folder
-    Creates a folder you can share with others to run this project. All they need to do is run the nanopool file inside the nanopool folder. They should also modify the wallet_addresses.txt file located in that folder with their information.
+. Move to the project's top level directory
+. Activate virtual environment
+. Execute Code
 
-. Activate your virtual environment (if it's not already active)
-. Run pyinstaller
-.. > pyinstaller nanopool.spec
-. If the command runs successfully, a folder named nanopool will be in the dist directory
+.Code Snippet (Linux & MacOS)
+[source]
+----
+cd <to the project's top level directory>
+source virtualenv/bin/activate
+python launcher.py
+----
+
+.Code Snippet (Windows)
+[source]
+----
+cd <to the project's top level directory>
+.\virtualenv\Scripts\activate.bat
+python launcher.py
+----
+
+== Project Distribution
+
+This section describes how to create a folder to distribute to others. Note, this folder will contain compiled code which is OS dependent (Windows/Linux/MacOS) meaning only users sharing the same type of of OS can share these distribution folders.
+
+. Move to the project's top directory
+. Activate your virtual environment
+. Create a folder called "nanopool" located in the dist directory
+
+
+.Code Snippet (Linux & MacOS)
+[source]
+----
+cd <to the project's top level directory>
+source virtualenv/bin/activate
+pyinstaller nanopool.spec
+----
+
+.Code Snippet (Windows)
+[source]
+----
+cd <to the project's top level directory>
+.\virtualenv\Scripts\activate.bat
+pyinstaller nanopool.spec
+----
+
+== Run Application
+
+. Execute the binary 
+
+.Code Snippet (Linux & MacOS)
+[source]
+----
+./<path-to-distribution-folder>/nanopool
+----
+
+.Code Snippet (Windows)
+[source]
+----
+.\<path-to-distribution-folder>\nanopool
+----
+
